@@ -13,7 +13,8 @@ func main() {
 		log.Fatalln("Failed to load Config:", err)
 	}
 
-	args := utils.ParseArgs(utils.PROXY)
+	args := proxy.ParseArgs()
+	args.HandleArgs()
 
 	px, err := proxy.NewProxy(args, cfg)
 	if err != nil {

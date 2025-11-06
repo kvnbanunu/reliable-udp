@@ -13,7 +13,8 @@ func main() {
 		log.Fatalln("Failed to load Config:", err)
 	}
 
-	args := utils.ParseArgs(utils.CLIENT)
+	args := client.ParseArgs()
+	args.HandleArgs()
 
 	ct, err := client.NewClient(args, cfg)
 	if err != nil {

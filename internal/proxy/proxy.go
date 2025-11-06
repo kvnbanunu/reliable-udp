@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -8,55 +9,138 @@ import (
 	"reliable-udp/internal/utils"
 )
 
-type Proxy struct {
-	Sock      *net.UDPConn
-	Server    *net.UDPConn
-	BufSize   int
-	Log       string
-	Timeout   int
-	DelayRate int
-	DropRate  int
+type PArgs struct {
+	ListenIP        string
+	ListenPort      uint
+	TargetIP        string
+	TargetPort      uint
+	ClientDropRate  uint
+	ServerDropRate  uint
+	ClientDelayRate uint
+	ServerDelayRate uint
+	ClientDelayMin  uint
+	ClientDelayMax  uint
+	ServerDelayMin  uint
+	ServerDelayMax  uint
 }
 
-func NewProxy(args *utils.Args, cfg *utils.Config) (*Proxy, error) {
+type Proxy struct {
+	Listener        *net.UDPConn
+	Target          *net.UDPConn
+	ClientDropRate  uint
+	ServerDropRate  uint
+	ClientDelayRate uint
+	ServerDelayRate uint
+	ClientDelayMin  uint
+	ClientDelayMax  uint
+	ServerDelayMin  uint
+	ServerDelayMax  uint
+	BufSize         uint
+	Log             string
+}
+
+func ParseArgs() *PArgs {
+	args := PArgs{}
+	flag.StringVar(&args.ListenIP, "listen-ip", "127.0.0.1", "IP address to bind for client packets")
+	flag.UintVar(&args.ListenPort, "listen-port", 8081, "UDP port to listen on for client packets")
+	flag.StringVar(&args.TargetIP, "target-ip", "127.0.0.1", "Server IP address to forward packets to")
+	flag.UintVar(&args.TargetPort, "target-port", 8080, "Server port number")
+	flag.UintVar(&args.ClientDropRate, "client-drop", 10, "Drop chance (%) for packets from client")
+	flag.UintVar(&args.ServerDropRate, "server-drop", 5, "Drop chance (%) for packets from server")
+	flag.UintVar(&args.ClientDelayRate, "client-delay", 20, "Delay chance (%) for packets from client")
+	flag.UintVar(&args.ServerDelayRate, "server-delay", 15, "Delay chance (%) for packets from server")
+	flag.UintVar(&args.ClientDelayMin, "client-delay-time-min", 100, "Minimum delay time (ms) for client packets")
+	flag.UintVar(&args.ClientDelayMax, "client-delay-time-max", 200, "Maximum delay time (ms) for client packets")
+	flag.UintVar(&args.ServerDelayMin, "server-delay-time-min", 150, "Minimum delay time (ms) for server packets")
+	flag.UintVar(&args.ServerDelayMax, "server-delay-time-max", 300, "Maximum delay time (ms) for server packets")
+	flag.Parse()
+
+	return &args
+}
+
+func (a *PArgs) HandleArgs() {
+	if !utils.CheckIP(a.ListenIP) || !utils.CheckIP(a.TargetIP) {
+		usage("Invalid IP address")
+	}
+
+	if !utils.CheckPort(a.ListenPort) || !utils.CheckPort(a.TargetPort) {
+		usage("Invalid Port")
+	}
+}
+
+func NewProxy(args *PArgs, cfg *utils.Config) (*Proxy, error) {
 	px := Proxy{}
 
-	addrStr := fmt.Sprintf("%s:%d", args.ProxyIP, args.ProxyPort)
+	addrStr := fmt.Sprintf("%s:%d", args.ListenIP, args.ListenPort)
 
 	addr, err := net.ResolveUDPAddr("udp", addrStr)
 	if err != nil {
 		return nil, err
 	}
 
-	px.Sock, err = net.ListenUDP("udp", addr)
+	px.Listener, err = net.ListenUDP("udp", addr)
 	if err != nil {
 		return nil, err
 	}
 
-	addrStr = fmt.Sprintf("%s:%d", args.ServerIP, args.ServerPort)
+	addrStr = fmt.Sprintf("%s:%d", args.TargetIP, args.TargetPort)
 
 	addr, err = net.ResolveUDPAddr("udp", addrStr)
 	if err != nil {
-		px.Sock.Close()
+		px.Listener.Close()
 		return nil, err
 	}
 
-	px.Server, err = net.DialUDP("udp", nil, addr)
+	px.Target, err = net.DialUDP("udp", nil, addr)
 	if err != nil {
-		px.Sock.Close()
+		px.Listener.Close()
 		return nil, err
 	}
 
+	px.ClientDropRate = args.ClientDropRate
+	px.ServerDropRate = args.ServerDropRate
+	px.ClientDelayRate = args.ClientDelayRate
+	px.ServerDelayRate = args.ServerDelayRate
+	px.ClientDelayMin = args.ClientDelayMin
+	px.ClientDelayMax = args.ClientDelayMax
+	px.ServerDelayMin = args.ServerDelayMin
+	px.ServerDelayMax = args.ServerDelayMax
 	px.BufSize = cfg.BufSize
 	px.Log = fmt.Sprintf("%sproxy%s", cfg.LogPath, cfg.LogName)
-	px.Timeout = cfg.Timeout
 
 	return &px, nil
 }
 
 func (p *Proxy) Cleanup() {
-	err := p.Sock.Close()
+	err := p.Listener.Close()
 	if err != nil {
 		log.Fatalln("Failed to close socket:", err)
 	}
+	err = p.Target.Close()
+	if err != nil {
+		log.Fatalln("Failed to close socket:", err)
+	}
+}
+
+func usage(msg string) {
+	if msg != "" {
+		log.Println(msg)
+	}
+
+	str := `Usage: Proxy [OPTIONS]
+Options:
+	--listen-ip                IP address to bind for client packets
+	--listen-port              Port to listen on for client packets
+	--target-ip                Server IP address to forward packets to
+	--target-port              Server port number
+	--client-drop              Drop chance (%) for packets from client
+	--server-drop              Drop chance (%) for packets from server
+	--client-delay             Delay chance (%) for packets from client
+	--server-delay             Delay chance (%) for packets from server
+	--client-delay-time-min    Minimum delay time (ms) for client packets
+	--client-delay-time-max    Maximum delay time (ms) for client packets
+	--server-delay-time-min    Minimum delay time (ms) for server packets
+	--server-delay-time-max    Maximum delay time (ms) for server packets`
+
+	fmt.Println(str)
 }

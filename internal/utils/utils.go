@@ -2,33 +2,15 @@ package utils
 
 import (
 	"encoding/json"
-	"flag"
-	"fmt"
-	"log"
+	"net"
 	"os"
 )
 
-type ProgramType int
-
-const (
-	PROXY ProgramType = iota
-	SERVER
-	CLIENT
-)
-
-type Args struct {
-	ServerIP   string
-	ServerPort int
-	ProxyIP    string
-	ProxyPort  int
-	Help       bool
-}
-
 type Config struct {
-	BufSize int    `json:"bufsize"`
+	BufSize uint   `json:"bufsize"`
 	LogPath string `json:"logpath"`
 	LogName string `json:"logname"`
-	Timeout int    `json:"timeout"`
+	Timeout uint   `json:"timeout"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -46,52 +28,18 @@ func LoadConfig() (*Config, error) {
 	return &cfg, nil
 }
 
-func ParseArgs(pt ProgramType) *Args {
-	prog := os.Args[0]
-
-	args := Args{}
-	flag.StringVar(&args.ServerIP, "i", "127.0.0.1", "IP address of the host server")
-	flag.IntVar(&args.ServerPort, "p", 8080, "Port of the host server")
-	if pt == PROXY {
-		flag.StringVar(&args.ProxyIP, "I", "127.0.0.1", "IP address of the proxy server")
-		flag.IntVar(&args.ProxyPort, "P", 8081, "Port of the proxy server")
+func CheckIP(str string) bool {
+	ip := net.ParseIP(str)
+	if ip == nil {
+		return false
 	}
-	flag.BoolVar(&args.Help, "h", false, "Prints a help message")
-	flag.Parse()
-
-	if args.Help {
-		usage(prog, "", pt)
-	}
-
-	if pt == PROXY {
-		// if same machine and using the same port
-		if args.ServerIP == args.ProxyIP &&
-			args.ServerPort == args.ProxyPort {
-			usage(prog, "", pt)
-		}
-	}
-
-	return &args
+	return true
 }
 
-func usage(prog, msg string, pt ProgramType) {
-	if msg != "" {
-		log.Println(msg)
+// Checks if the port is within uint16 range
+func CheckPort(port uint) bool {
+	if port > 65535 {
+		return false
 	}
-
-	str := `Usage: %s [OPTIONS]
-Options:
-	-h    Display this help message
-	-i    IP address of the host server
-	-p    Port of the host server%s
-`
-	if pt == PROXY {
-		fmt.Printf(str, prog, `
-	-I    IP address of the proxy server
-	-P    Port of the proxy server
-`)
-	} else {
-		fmt.Printf(str, prog, "")
-	}
-	os.Exit(0)
+	return true
 }
