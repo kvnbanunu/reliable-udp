@@ -11,37 +11,40 @@ SERVER_IP = 127.0.0.1
 PROXY_IP = 127.0.0.1
 SERVER_PORT = 8080
 PROXY_PORT = 8081
-SERVER_ARGS = -i $(SERVER_IP) -p $(SERVER_PORT)
-CLIENT_ARGS = -i $(SERVER_IP) -p $(SERVER_PORT)
-CLIENT_ARGS_PROXY = -i $(PROXY_IP) -p $(PROXY_PORT)
-PROXY_ARGS = $(SERVER_ARGS) -I $(PROXY_IP) -P $(PROXY_PORT)
+TIMEOUT = 5
+MAX_RETRIES = 5
+SERVER_ARGS = --listen-ip $(SERVER_IP) --listen-port $(SERVER_PORT)
+CLIENT_ARGS = --target-ip $(SERVER_IP) --target-port $(SERVER_PORT) --timeout $(TIMEOUT) --max-retries $(MAX_RETRIES)
+CLIENT_ARGS_PROXY = --target-ip $(PROXY_IP) --target-port $(PROXY_PORT) --timeout $(TIMEOUT) --max-retries $(MAX_RETRIES)
+PROXY_PARAMS = --client-drop 10 --server-drop 5 --client-delay 20 --server-delay 15 --client-delay-time-min 100 --client-delay-time-max 200 --server-delay-time-min 150 --server-delay-time-max 300
+PROXY_ARGS = --listen-ip $(PROXY_IP) --listen-port $(PROXY_PORT) --target-ip $(SERVER_IP) --target-port $(SERVER_PORT) $(PROXY_PARAMS)
 COPY_CONFIG = cp config.json bin/
 
 all: clean buildserver buildclient buildproxy
 
 server:
-	@$(RUN) $(SERVER) $(SERVER_ARGS)
+	$(RUN) $(SERVER) $(SERVER_ARGS)
 
 client:
-	@$(RUN) $(CLIENT) $(CLIENT_ARGS)
+	$(RUN) $(CLIENT) $(CLIENT_ARGS)
 
 clientp:
-	@$(RUN) $(CLIENT) $(CLIENT_ARGS_PROXY)
+	$(RUN) $(CLIENT) $(CLIENT_ARGS_PROXY)
 
 proxy:
-	@$(RUN) $(PROXY) $(PROXY_ARGS)
+	$(RUN) $(PROXY) $(PROXY_ARGS)
 
 buildserver:
-	@$(BUILD) $(SERVER_TARGET) $(SERVER)
+	$(BUILD) $(SERVER_TARGET) $(SERVER)
 	@$(COPY_CONFIG)
 
 buildclient:
-	@$(BUILD) $(CLIENT_TARGET) $(CLIENT)
+	$(BUILD) $(CLIENT_TARGET) $(CLIENT)
 	@$(COPY_CONFIG)
 
 buildproxy:
-	@$(BUILD) $(PROXY_TARGET) $(PROXY)
+	$(BUILD) $(PROXY_TARGET) $(PROXY)
 	@$(COPY_CONFIG)
 
 clean:
-	@rm -rf bin
+	rm -rf bin

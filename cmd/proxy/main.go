@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"reliable-udp/internal/proxy"
@@ -20,6 +21,8 @@ func main() {
 	if err != nil {
 		log.Fatalln("Failed to setup client:", err)
 	}
+
+	fmt.Println(px)
 
 	defer px.Cleanup()
 }

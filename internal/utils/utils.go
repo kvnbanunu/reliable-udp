@@ -10,7 +10,6 @@ type Config struct {
 	BufSize uint   `json:"bufsize"`
 	LogPath string `json:"logpath"`
 	LogName string `json:"logname"`
-	Timeout uint   `json:"timeout"`
 }
 
 func LoadConfig() (*Config, error) {

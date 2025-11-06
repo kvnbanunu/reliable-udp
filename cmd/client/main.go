@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"reliable-udp/internal/client"
@@ -20,6 +21,8 @@ func main() {
 	if err != nil {
 		log.Fatalln("Failed to setup client:", err)
 	}
+
+	fmt.Println(ct)
 
 	defer ct.Cleanup()
 }

@@ -1,6 +1,5 @@
 {
   "bufsize": 1024,
   "logpath": "./logs/",
-  "logname": ".log",
-  "timeout": 2
+  "logname": ".log"
 }
