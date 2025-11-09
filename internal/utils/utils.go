@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"log"
 	"net"
 	"os"
 )
@@ -42,3 +43,20 @@ func CheckPort(port uint) bool {
 	}
 	return true
 }
+
+// Creates logfile and sets logger to file
+func PrepareLogFile(path string) error {
+	f, err := os.OpenFile(path, os.O_WRONLY | os.O_CREATE | os.O_APPEND, 0666)
+	if err != nil {
+		return err
+	}
+
+	log.SetOutput(f)
+	return nil
+}
+
+// opens file for reading only
+func OpenLogFile(path string) (*os.File, error) {
+	return os.OpenFile(path, os.O_RDONLY, 0666)
+}
+
