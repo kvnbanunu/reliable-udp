@@ -16,12 +16,13 @@ type CArgs struct {
 	MaxRetries uint
 }
 
+// Holds context for the client program
 type Client struct {
-	Target     *net.UDPConn
-	Timeout    uint
-	MaxRetries uint
-	BufSize    uint
-	Log        string
+	Target     *net.UDPConn // Server connection
+	Timeout    uint         // Max time to wait for ack packets
+	MaxRetries uint         // Limit of packet resend attempts
+	BufSize    uint         // Size of the buffer for read & write
+	Log        string       // Path to the log file
 }
 
 func ParseArgs() *CArgs {
