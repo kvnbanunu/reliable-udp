@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	"reliable-udp/internal/utils"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type CArgs struct {
@@ -27,11 +30,18 @@ type Client struct {
 
 func ParseArgs() *CArgs {
 	args := CArgs{}
+	var help bool
+
+	flag.BoolVar(&help, "h", false, "Displays this help message")
 	flag.StringVar(&args.TargetIP, "target-ip", "127.0.0.1", "IP address of the server")
 	flag.UintVar(&args.TargetPort, "target-port", 8080, "Port number of the server")
 	flag.UintVar(&args.Timeout, "timeout", 5, "Timeout (in seconds) for waiting for acknowledgements")
 	flag.UintVar(&args.MaxRetries, "max-retries", 5, "Maximum number of retries per message")
 	flag.Parse()
+
+	if help {
+		usage("")
+	}
 
 	return &args
 }
@@ -83,10 +93,25 @@ func usage(msg string) {
 
 	str := `Usage: Client [OPTIONS]
 Options:
+	-h               Displays this help message
 	--target-ip      IP address of the server
 	--target-port    Port number of the server
 	--timeout        Timeout (in seconds) for waiting for acknowledgements
 	--max-retries    Maximum number of retries per message`
 
 	fmt.Println(str)
+	os.Exit(0)
+}
+
+func (c Client) Init() tea.Cmd {
+	return nil
+}
+
+func (c Client) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return c, nil
+}
+
+func (c Client) View() string {
+	var view string
+	return view
 }

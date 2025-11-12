@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	"reliable-udp/internal/utils"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type SArgs struct {
@@ -22,9 +25,16 @@ type Server struct {
 
 func ParseArgs() *SArgs {
 	args := SArgs{}
+	var help bool
+
+	flag.BoolVar(&help, "h", false, "Displays this help message")
 	flag.StringVar(&args.ListenIP, "listen-ip", "127.0.0.1", "IP address to bind to")
 	flag.UintVar(&args.ListenPort, "listen-port", 8080, "UDP port to listen on")
 	flag.Parse()
+
+	if help {
+		usage("")
+	}
 
 	return &args
 }
@@ -74,8 +84,23 @@ func usage(msg string) {
 
 	str := `Usage: Server [OPTIONS]
 Options:
+	-h               Displays this help message
 	--listen-ip      IP address to bind to
 	--listen-port    UDP port to listen on`
 
 	fmt.Println(str)
+	os.Exit(0)
+}
+
+func (s Server) Init() tea.Cmd {
+	return nil
+}
+
+func (s Server) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return s, nil
+}
+
+func (s Server) View() string {
+	var view string
+	return view
 }

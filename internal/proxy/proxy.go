@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	"reliable-udp/internal/utils"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type PArgs struct {
@@ -41,6 +44,9 @@ type Proxy struct {
 
 func ParseArgs() *PArgs {
 	args := PArgs{}
+	var help bool
+
+	flag.BoolVar(&help, "h", false, "Displays this help message")
 	flag.StringVar(&args.ListenIP, "listen-ip", "127.0.0.1", "IP address to bind for client packets")
 	flag.UintVar(&args.ListenPort, "listen-port", 8081, "UDP port to listen on for client packets")
 	flag.StringVar(&args.TargetIP, "target-ip", "127.0.0.1", "Server IP address to forward packets to")
@@ -54,6 +60,10 @@ func ParseArgs() *PArgs {
 	flag.UintVar(&args.ServerDelayMin, "server-delay-time-min", 150, "Minimum delay time (ms) for server packets")
 	flag.UintVar(&args.ServerDelayMax, "server-delay-time-max", 300, "Maximum delay time (ms) for server packets")
 	flag.Parse()
+
+	if help {
+		usage("")
+	}
 
 	return &args
 }
@@ -129,6 +139,7 @@ func usage(msg string) {
 
 	str := `Usage: Proxy [OPTIONS]
 Options:
+	-h                         Displays this help message
 	--listen-ip                IP address to bind for client packets
 	--listen-port              Port to listen on for client packets
 	--target-ip                Server IP address to forward packets to
@@ -143,4 +154,18 @@ Options:
 	--server-delay-time-max    Maximum delay time (ms) for server packets`
 
 	fmt.Println(str)
+	os.Exit(0)
+}
+
+func (p Proxy) Init() tea.Cmd {
+	return nil
+}
+
+func (p Proxy) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return p, nil
+}
+
+func (p Proxy) View() string {
+	var view string
+	return view
 }
