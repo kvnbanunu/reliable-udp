@@ -2,14 +2,13 @@ package utils
 
 import (
 	"encoding/json"
-	"log"
 	"net"
 	"os"
 )
 
 type Config struct {
 	BufSize uint   `json:"bufsize"`
-	LogPath string `json:"logpath"`
+	LogDir  string `json:"logdir"`
 	LogName string `json:"logname"`
 }
 
@@ -44,19 +43,37 @@ func CheckPort(port uint) bool {
 	return true
 }
 
-// Creates logfile and sets logger to file
+// Creates logfile if not exists
 func PrepareLogFile(path string) error {
-	f, err := os.OpenFile(path, os.O_WRONLY | os.O_CREATE | os.O_APPEND, 0666)
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o777)
 	if err != nil {
 		return err
 	}
-
-	log.SetOutput(f)
+	f.Close()
 	return nil
 }
 
 // opens file for reading only
 func OpenLogFile(path string) (*os.File, error) {
-	return os.OpenFile(path, os.O_RDONLY, 0666)
+	return os.OpenFile(path, os.O_RDONLY, 0o777)
 }
 
+// Writes new data to a temporary file, then replaces the real log file
+func AtomicWrite(logDir, prog, logPath string, data []byte) {
+	tempFile, err := os.CreateTemp(logDir, "tempfile_"+prog)
+	if err != nil {
+		panic(err)
+	}
+	defer os.Remove(tempFile.Name())
+
+	_, err = tempFile.Write(data)
+	if err != nil {
+		panic(err)
+	}
+	tempFile.Close()
+
+	err = os.Rename(tempFile.Name(), logPath)
+	if err != nil {
+		panic(err)
+	}
+}

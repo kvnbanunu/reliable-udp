@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"reliable-udp/internal/client"
@@ -22,7 +21,10 @@ func main() {
 		log.Fatalln("Failed to setup client:", err)
 	}
 
-	fmt.Println(ct)
-
 	defer ct.Cleanup()
+
+	// err = utils.Run(ct)
+	// if err != nil {
+	// 	fmt.Println("Error running client model: %v", err)
+	// }
 }

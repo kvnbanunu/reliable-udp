@@ -7,9 +7,10 @@ import (
 	"net"
 	"os"
 
+	"reliable-udp/internal/tui"
 	"reliable-udp/internal/utils"
 
-	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/bubbles/progress"
 )
 
 type CArgs struct {
@@ -21,11 +22,17 @@ type CArgs struct {
 
 // Holds context for the client program
 type Client struct {
-	Target     *net.UDPConn // Server connection
-	Timeout    uint         // Max time to wait for ack packets
-	MaxRetries uint         // Limit of packet resend attempts
-	BufSize    uint         // Size of the buffer for read & write
-	Log        string       // Path to the log file
+	Target         *net.UDPConn // Server connection
+	LogDir         string       // Directory path to log file
+	LogPath        string       // Full path to log file
+	Timeout        uint         // Max time to wait for ack packets
+	MaxRetries     uint         // Limit of packet resend attempts
+	BufSize        uint         // Size of the buffer for read & write
+	max            int          // Higher number of sent/recv
+	MsgSent        int          // Count of messages sent
+	MsgRecv        int          // Count of messages received
+	MsgSentDisplay progress.Model
+	MsgRecvDisplay progress.Model
 }
 
 func ParseArgs() *CArgs {
@@ -71,19 +78,25 @@ func NewClient(args *CArgs, cfg *utils.Config) (*Client, error) {
 		return nil, err
 	}
 
+	ct.LogDir = cfg.LogDir
+	ct.LogPath = fmt.Sprintf("%sclient%s", cfg.LogDir, cfg.LogName)
+	err = utils.PrepareLogFile(ct.LogPath)
+	if err != nil {
+		ct.Target.Close()
+		return nil, err
+	}
+
 	ct.Timeout = args.Timeout
 	ct.MaxRetries = args.MaxRetries
 	ct.BufSize = cfg.BufSize
-	ct.Log = fmt.Sprintf("%sclient%s", cfg.LogPath, cfg.LogName)
+	ct.MsgSentDisplay = tui.NewProgress()
+	ct.MsgRecvDisplay = tui.NewProgress()
 
 	return &ct, nil
 }
 
 func (c *Client) Cleanup() {
-	err := c.Target.Close()
-	if err != nil {
-		log.Fatalln("Failed to close socket:", err)
-	}
+	c.Target.Close()
 }
 
 func usage(msg string) {
@@ -101,17 +114,4 @@ Options:
 
 	fmt.Println(str)
 	os.Exit(0)
-}
-
-func (c Client) Init() tea.Cmd {
-	return nil
-}
-
-func (c Client) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return c, nil
-}
-
-func (c Client) View() string {
-	var view string
-	return view
 }

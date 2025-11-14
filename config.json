@@ -1,5 +1,5 @@
 {
   "bufsize": 1024,
-  "logpath": "./logs/",
+  "logdir": "./logs/",
   "logname": ".log"
 }
