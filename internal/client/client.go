@@ -23,11 +23,15 @@ type CArgs struct {
 	MaxRetries uint
 }
 
+const MaxLogs int = 5
+
 // Holds context for the client program
 type Client struct {
-	Target         *net.UDPConn  // Server connection
-	LogDir         string        // Directory path to log file
-	LogPath        string        // Full path to log file
+	Target         *net.UDPConn // Server connection
+	LogDir         string       // Directory path to log file
+	LogPath        string       // Full path to log file
+	LogMsg         []string     // The log message that will render to screen
+	NumLogs        int
 	Timeout        time.Duration // Max time to wait for ack packets
 	MaxRetries     uint          // Limit of packet resend attempts
 	SeqNum         int           // Sequence number of the current message

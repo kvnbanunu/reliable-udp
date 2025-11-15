@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"strings"
 
 	"reliable-udp/internal/tui"
 
@@ -43,12 +44,22 @@ func (c Client) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tui.SendSuccessMsg:
 		c.MsgSent++
+		c.addLog(constructLog(msg))
 		return c, tea.Batch(c.logCmd(), tui.RecvMessageTimeoutCmd(c.Target, c.Timeout))
 	case tui.LogSuccessMsg:
 		return c.updateProgress()
 	case tui.RecvSuccessMsg:
+		c.addLog("ACK received!")
 		c, cmd = c.handleRecvMsg(msg)
 		return c, tea.Batch(c.logCmd(), cmd)
+	case tui.TimeoutMsg:
+		c.addLog("Timed out waiting for ACK. Resending...")
+		return c.handleTimeout()
+	case tui.CancelMsg:
+		c.addLog("Max number of retries attempted. Request cancelled")
+		c.resetState()
+		return c, nil
+
 	case progress.FrameMsg:
 		progressModel, cmd := c.MsgSentDisplay.Update(msg)
 		c.MsgSentDisplay = progressModel.(progress.Model)
@@ -93,6 +104,8 @@ func (c Client) View() string {
 		sentView,
 		"Messages Received:",
 		recView,
+		"",
+		strings.Join(c.LogMsg, "\n"),
 		"",
 		c.Help.View(tui.Keys),
 	)

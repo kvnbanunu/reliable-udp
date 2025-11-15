@@ -13,10 +13,16 @@ type LogMsg struct {
 
 type LogSuccessMsg struct{}
 
-type SendSuccessMsg struct{}
+type SendSuccessMsg struct {
+	SeqNum  uint8
+	Retries uint8
+	Timeout bool
+}
 
 type RecvSuccessMsg struct {
 	Packet utils.Packet
 }
 
 type TimeoutMsg struct{}
+
+type CancelMsg struct{}

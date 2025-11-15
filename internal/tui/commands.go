@@ -41,7 +41,11 @@ func SendMessageCmd(conn *net.UDPConn, packet utils.Packet) tea.Cmd {
 		if bytes == 0 {
 			return ErrMsg{Err: fmt.Errorf("Error sending message")}
 		}
-		return SendSuccessMsg{}
+		return SendSuccessMsg{
+			SeqNum:  packet.SeqNum,
+			Retries: packet.Retries,
+			Timeout: packet.Retries != 0,
+		}
 	}
 }
 
@@ -67,7 +71,7 @@ func RecvMessageTimeoutCmd(conn *net.UDPConn, timeout time.Duration) tea.Cmd {
 	return func() tea.Msg {
 		buf, err := utils.ReadTimeout(conn, timeout)
 		if err != nil {
-			if errors.Is(utils.ErrTimeout, err) {
+			if errors.Is(err, utils.ErrTimeout) {
 				return TimeoutMsg{}
 			}
 			return ErrMsg{Err: err}
