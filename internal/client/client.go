@@ -11,6 +11,7 @@ import (
 	"reliable-udp/internal/utils"
 
 	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/textinput"
 )
 
 type CArgs struct {
@@ -27,12 +28,15 @@ type Client struct {
 	LogPath        string       // Full path to log file
 	Timeout        uint         // Max time to wait for ack packets
 	MaxRetries     uint         // Limit of packet resend attempts
-	BufSize        uint         // Size of the buffer for read & write
-	max            int          // Higher number of sent/recv
+	SeqNum         int          // Sequence number of the current message
+	Max            int          // Higher number of sent/recv
 	MsgSent        int          // Count of messages sent
 	MsgRecv        int          // Count of messages received
+	Input          textinput.Model
 	MsgSentDisplay progress.Model
 	MsgRecvDisplay progress.Model
+	CurrentMsg     string
+	CurrentPacket  utils.Packet
 }
 
 func ParseArgs() *CArgs {
@@ -88,7 +92,7 @@ func NewClient(args *CArgs, cfg *utils.Config) (*Client, error) {
 
 	ct.Timeout = args.Timeout
 	ct.MaxRetries = args.MaxRetries
-	ct.BufSize = cfg.BufSize
+	ct.Input = tui.NewTextInput()
 	ct.MsgSentDisplay = tui.NewProgress()
 	ct.MsgRecvDisplay = tui.NewProgress()
 

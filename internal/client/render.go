@@ -1,6 +1,11 @@
 package client
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"reliable-udp/internal/tui"
+
+	"github.com/charmbracelet/bubbles/key"
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 func (c Client) Init() tea.Cmd {
 	return nil
@@ -9,8 +14,8 @@ func (c Client) Init() tea.Cmd {
 func (c Client) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c", "esc":
+		switch {
+		case key.Matches(msg, tui.Keys.Quit):
 			return c, tea.Quit
 		}
 	}

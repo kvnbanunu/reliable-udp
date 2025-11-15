@@ -1,7 +1,10 @@
 package tui
 
 import (
+	"reliable-udp/internal/utils"
+
 	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -11,6 +14,15 @@ func NewProgress() progress.Model {
 		progress.WithDefaultGradient(),
 		progress.WithoutPercentage(),
 	)
+}
+
+func NewTextInput() textinput.Model {
+	ti := textinput.New()
+	ti.Placeholder = "Hello World"
+	ti.CharLimit = int(utils.MAX_PAYLOAD_LEN)
+	ti.Width = 20
+
+	return ti
 }
 
 // Generic Run command to start the render program
