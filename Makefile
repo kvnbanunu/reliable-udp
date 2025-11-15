@@ -22,11 +22,11 @@ COPY_CONFIG = cp config.json bin/
 
 all: clean buildserver buildclient buildproxy
 
-server:
-	$(RUN) $(SERVER) $(SERVER_ARGS)
+server: clear
+	@$(RUN) $(SERVER) $(SERVER_ARGS)
 
-client:
-	$(RUN) $(CLIENT) $(CLIENT_ARGS)
+client: clear
+	@$(RUN) $(CLIENT) $(CLIENT_ARGS)
 
 clientp:
 	$(RUN) $(CLIENT) $(CLIENT_ARGS_PROXY)
@@ -45,6 +45,9 @@ buildclient:
 buildproxy:
 	$(BUILD) $(PROXY_TARGET) $(PROXY)
 	@$(COPY_CONFIG)
+
+clear:
+	@clear
 
 clean:
 	rm -rf bin
