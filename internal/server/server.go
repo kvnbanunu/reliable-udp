@@ -19,7 +19,6 @@ type SArgs struct {
 
 type Server struct {
 	Listener *net.UDPConn
-	BufSize  uint
 	Log      string
 }
 
@@ -64,8 +63,7 @@ func NewServer(args *SArgs, cfg *utils.Config) (*Server, error) {
 		return nil, err
 	}
 
-	srv.BufSize = cfg.BufSize
-	srv.Log = fmt.Sprintf("%sserver%s", cfg.LogPath, cfg.LogName)
+	srv.Log = fmt.Sprintf("%sserver%s", cfg.LogDir, cfg.LogName)
 
 	return &srv, nil
 }

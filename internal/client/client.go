@@ -6,10 +6,12 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
 	"reliable-udp/internal/tui"
 	"reliable-udp/internal/utils"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/textinput"
 )
@@ -23,20 +25,22 @@ type CArgs struct {
 
 // Holds context for the client program
 type Client struct {
-	Target         *net.UDPConn // Server connection
-	LogDir         string       // Directory path to log file
-	LogPath        string       // Full path to log file
-	Timeout        uint         // Max time to wait for ack packets
-	MaxRetries     uint         // Limit of packet resend attempts
-	SeqNum         int          // Sequence number of the current message
-	Max            int          // Higher number of sent/recv
-	MsgSent        int          // Count of messages sent
-	MsgRecv        int          // Count of messages received
+	Target         *net.UDPConn  // Server connection
+	LogDir         string        // Directory path to log file
+	LogPath        string        // Full path to log file
+	Timeout        time.Duration // Max time to wait for ack packets
+	MaxRetries     uint          // Limit of packet resend attempts
+	SeqNum         int           // Sequence number of the current message
+	Max            int           // Higher number of sent/recv
+	MsgSent        int           // Count of messages sent
+	MsgRecv        int           // Count of messages received
+	Err            error
+	CurrentMsg     string
+	CurrentPacket  utils.Packet
+	Help           help.Model
 	Input          textinput.Model
 	MsgSentDisplay progress.Model
 	MsgRecvDisplay progress.Model
-	CurrentMsg     string
-	CurrentPacket  utils.Packet
 }
 
 func ParseArgs() *CArgs {
@@ -90,11 +94,13 @@ func NewClient(args *CArgs, cfg *utils.Config) (*Client, error) {
 		return nil, err
 	}
 
-	ct.Timeout = args.Timeout
+	ct.Timeout = time.Duration(args.Timeout) * time.Second
 	ct.MaxRetries = args.MaxRetries
-	ct.Input = tui.NewTextInput()
-	ct.MsgSentDisplay = tui.NewProgress()
-	ct.MsgRecvDisplay = tui.NewProgress()
+	ct.Help = tui.NewHelpModel()
+	ct.Input = tui.NewTextInputModel()
+	ct.MsgSentDisplay = tui.NewProgressModel()
+	ct.MsgRecvDisplay = tui.NewProgressModel()
+	ct.Err = nil
 
 	return &ct, nil
 }

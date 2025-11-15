@@ -3,7 +3,7 @@ package tui
 import "reliable-udp/internal/utils"
 
 type ErrMsg struct {
-	err error
+	Err error
 }
 
 type LogMsg struct {
@@ -11,9 +11,11 @@ type LogMsg struct {
 	MsgRecv int `json:"messagesReceived"`
 }
 
-type SentMsg struct{}
+type LogSuccessMsg struct{}
 
-type RecvMsg struct{
+type SendSuccessMsg struct{}
+
+type RecvSuccessMsg struct {
 	Packet utils.Packet
 }
 

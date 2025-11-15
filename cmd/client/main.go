@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"reliable-udp/internal/client"
+	"reliable-udp/internal/tui"
 	"reliable-udp/internal/utils"
 )
 
@@ -23,8 +25,8 @@ func main() {
 
 	defer ct.Cleanup()
 
-	// err = utils.Run(ct)
-	// if err != nil {
-	// 	fmt.Println("Error running client model: %v", err)
-	// }
+	err = tui.Run(ct, "client")
+	if err != nil {
+		fmt.Printf("Error running client model: %v", err)
+	}
 }

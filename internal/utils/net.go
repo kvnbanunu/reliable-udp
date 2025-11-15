@@ -74,9 +74,9 @@ func Decode(data []byte) Packet {
 	return res
 }
 
-func ReadTimeout(conn *net.UDPConn, timeout int) ([]byte, error) {
+func ReadTimeout(conn *net.UDPConn, timeout time.Duration) ([]byte, error) {
 	buf := make([]byte, MAX_PACKET_LEN)
-	err := conn.SetReadDeadline(time.Now().Add(time.Second * time.Duration(timeout)))
+	err := conn.SetReadDeadline(time.Now().Add(timeout))
 	if err != nil {
 		return nil, err
 	}

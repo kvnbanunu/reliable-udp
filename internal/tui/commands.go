@@ -5,21 +5,28 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"time"
 
 	"reliable-udp/internal/utils"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+func ErrCmd(err error) tea.Cmd {
+	return func() tea.Msg {
+		return ErrMsg{Err: err}
+	}
+}
+
 func LogMessageCmd(logDir, prog, logPath string, logMsg LogMsg) tea.Cmd {
 	return func() tea.Msg {
 		msg, err := json.Marshal(logMsg)
 		if err != nil {
-			return ErrMsg{err: err}
+			return ErrMsg{Err: err}
 		}
 
 		utils.AtomicWrite(logDir, prog, logPath, msg)
-		return nil
+		return LogSuccessMsg{}
 	}
 }
 
@@ -29,12 +36,12 @@ func SendMessageCmd(conn *net.UDPConn, packet utils.Packet) tea.Cmd {
 
 		bytes, err := conn.Write(buf)
 		if err != nil {
-			return ErrMsg{err: err}
+			return ErrMsg{Err: err}
 		}
 		if bytes == 0 {
-			return ErrMsg{err: fmt.Errorf("Error sending message")}
+			return ErrMsg{Err: fmt.Errorf("Error sending message")}
 		}
-		return SentMsg{}
+		return SendSuccessMsg{}
 	}
 }
 
@@ -44,29 +51,29 @@ func RecvMessageCmd(conn *net.UDPConn) tea.Cmd {
 
 		bytes, _, err := conn.ReadFromUDP(buf)
 		if err != nil {
-			return ErrMsg{err: err}
+			return ErrMsg{Err: err}
 		}
 
 		if bytes == 0 {
-			return ErrMsg{err: fmt.Errorf("Error reading message")}
+			return ErrMsg{Err: fmt.Errorf("Error reading message")}
 		}
 
 		p := utils.Decode(buf)
-		return RecvMsg{Packet: p}
+		return RecvSuccessMsg{Packet: p}
 	}
 }
 
-func RecvMessageTimeoutCmd(conn *net.UDPConn, timeout int) tea.Cmd {
+func RecvMessageTimeoutCmd(conn *net.UDPConn, timeout time.Duration) tea.Cmd {
 	return func() tea.Msg {
 		buf, err := utils.ReadTimeout(conn, timeout)
 		if err != nil {
 			if errors.Is(utils.ErrTimeout, err) {
 				return TimeoutMsg{}
 			}
-			return ErrMsg{err: err}
+			return ErrMsg{Err: err}
 		}
 
 		p := utils.Decode(buf)
-		return RecvMsg{Packet: p}
+		return RecvSuccessMsg{Packet: p}
 	}
 }
