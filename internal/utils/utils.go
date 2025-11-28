@@ -1,31 +1,19 @@
 package utils
 
 import (
-	"encoding/json"
+	"errors"
+	"fmt"
 	"net"
-	"os"
 )
 
-type Config struct {
-	LogDir  string `json:"logdir"`
-	LogName string `json:"logname"`
-}
+const (
+	UINT8SZ  int = 255
+	UINT16SZ int = 65535
+)
 
-func LoadConfig() (*Config, error) {
-	file, err := os.ReadFile("config.json")
-	if err != nil {
-		return nil, err
-	}
+var ErrTooLarge = errors.New("Error: Integer too large")
 
-	var cfg Config
-	err = json.Unmarshal(file, &cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cfg, nil
-}
-
+// Checks if the string is a valid IP address
 func CheckIP(str string) bool {
 	ip := net.ParseIP(str)
 	if ip == nil {
@@ -36,8 +24,31 @@ func CheckIP(str string) bool {
 
 // Checks if the port is within uint16 range
 func CheckPort(port uint) bool {
-	if port > 65535 {
+	if port > uint(UINT16SZ) {
 		return false
 	}
 	return true
+}
+
+// Converts unsigned integer to uint8 if in range
+func ToUInt8(num uint) (uint8, error) {
+	if num <= uint(UINT8SZ) {
+		return uint8(num), nil
+	}
+
+	return 0, ErrTooLarge
+}
+
+// Converts unsigned integer to uint16 if in range
+func ToUInt16(num uint) (uint16, error) {
+	if num <= uint(UINT16SZ) {
+		return uint16(num), nil
+	}
+
+	return 0, ErrTooLarge
+}
+
+// Wraps error message
+func WrapErr(msg string, err error) error {
+	return fmt.Errorf("%s: %w", msg, err)
 }

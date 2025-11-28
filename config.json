@@ -1,5 +1,17 @@
 {
-  "bufsize": 1024,
-  "logdir": "./logs/",
-  "logname": ".log"
+  "ServerIP": "127.0.0.1",
+  "ServerPort": 8080,
+  "Timeout": 2,
+  "MaxRetries": 2,
+  "UseProxy": true,
+  "ProxyIP": "127.0.0.1",
+  "ProxyPort": 8081,
+  "ClientDropRate": 0,
+  "ServerDropRate": 0,
+  "ClientDelayRate": 0,
+  "ServerDelayRate": 0,
+  "ClientDelayTimeMin": 0,
+  "ClientDelayTimeMax": 0,
+  "ServerDelayTimeMin": 0,
+  "ServerDelayTimeMax": 0
 }
