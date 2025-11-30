@@ -13,5 +13,6 @@
   "ClientDelayTimeMin": 0,
   "ClientDelayTimeMax": 0,
   "ServerDelayTimeMin": 0,
-  "ServerDelayTimeMax": 0
+  "ServerDelayTimeMax": 0,
+  "MaxLogs": 5
 }

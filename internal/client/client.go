@@ -6,8 +6,8 @@ import (
 	"log"
 	"net"
 	"os"
-	"time"
 
+	"reliable-udp/internal/packet"
 	"reliable-udp/internal/tui"
 	"reliable-udp/internal/utils"
 
@@ -16,71 +16,101 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
+// Holds validated command line arguments
 type CArgs struct {
-	TargetIP   string
-	TargetPort uint
-	Timeout    uint
-	MaxRetries uint
+	Target     string // Server address and port
+	Timeout    uint8  // Read timeout in seconds
+	MaxRetries uint8  // Max retransmission attempts
 }
 
-const MaxLogs int = 5
+// Holds raw command line arguments
+type CRawArgs struct {
+	TargetIP   string // Server IP address
+	TargetPort uint   // Server listening Port
+	Timeout    uint   // Read timeout in seconds
+	MaxRetries uint   // Max retransmission attempts
+}
 
 // Holds context for the client program
 type Client struct {
-	Target         *net.UDPConn // Server connection
-	LogDir         string       // Directory path to log file
-	LogPath        string       // Full path to log file
-	LogMsg         []string     // The log message that will render to screen
-	NumLogs        int
-	Timeout        time.Duration // Max time to wait for ack packets
-	MaxRetries     uint          // Limit of packet resend attempts
-	SeqNum         int           // Sequence number of the current message
-	Max            int           // Higher number of sent/recv
-	MsgSent        int           // Count of messages sent
-	MsgRecv        int           // Count of messages received
-	Err            error
-	CurrentMsg     string
-	CurrentPacket  utils.Packet
-	Help           help.Model
-	Input          textinput.Model
-	MsgSentDisplay progress.Model
-	MsgRecvDisplay progress.Model
+	// Config
+	Target     *net.UDPConn // Server connection
+	Timeout    uint8        // Read timeout in seconds
+	MaxRetries uint8        // Limit of packet resend attempts
+
+	// Communication data
+	CurrentSeq    uint8         // Sequence number of the current message
+	CurrentMsg    string        // Current input message
+	CurrentPacket packet.Packet // Current packet to send
+
+	// Logging data
+	MaxLogs    int      // Max number of logs to show on screen
+	MaxDisplay int      // Higher number of sent vs recv
+	MsgSent    int      // Count of messages sent
+	MsgRecv    int      // Count of messages received
+	LogMsg     []string // The log message that will render to screen
+	NumLogs    int
+	Err        error
+
+	// Render models
+	Help           help.Model      // Displays controls
+	Input          textinput.Model // User input
+	MsgSentDisplay progress.Model  // Messages sent bar graph
+	MsgRecvDisplay progress.Model  // Messages received bar graph
 }
 
-func ParseArgs() *CArgs {
+func ParseArgs(cfg *utils.Config) *CArgs {
 	args := CArgs{}
 	var help bool
 
+	targetIPDefault := cfg.ServerIP
+	targetPortDefault := cfg.ServerPort
+
+	if cfg.UseProxy {
+		targetIPDefault = cfg.ProxyIP
+		targetPortDefault = cfg.ProxyPort
+	}
+
 	flag.BoolVar(&help, "h", false, "Displays this help message")
-	flag.StringVar(&args.TargetIP, "target-ip", "127.0.0.1", "IP address of the server")
-	flag.UintVar(&args.TargetPort, "target-port", 8080, "Port number of the server")
-	flag.UintVar(&args.Timeout, "timeout", 5, "Timeout (in seconds) for waiting for acknowledgements")
-	flag.UintVar(&args.MaxRetries, "max-retries", 5, "Maximum number of retries per message")
+	flag.StringVar(&args.TargetIP, "target-ip", targetIPDefault, "IP address of the server")
+	flag.UintVar(&args.TargetPort, "target-port", uint(targetPortDefault), "Port number of the server")
+	flag.UintVar(&args.Timeout, "timeout", uint(cfg.Timeout), "Timeout (in seconds) for waiting for acknowledgements")
+	flag.UintVar(&args.MaxRetries, "max-retries", uint(cfg.MaxRetries), "Maximum number of retries per message")
 	flag.Parse()
 
 	if help {
-		usage("")
+		usage("", nil)
 	}
 
 	return &args
 }
 
-func (a *CArgs) HandleArgs() {
+func (a *CRawArgs) HandleArgs(c *CArgs) {
 	if !utils.CheckIP(a.TargetIP) {
-		usage("Invalid IP address")
+		usage("Invalid IP address", nil)
 	}
 
-	if !utils.CheckPort(a.TargetPort) {
-		usage("Invalid Port")
+	port, err := utils.ToUInt16(a.TargetPort)
+	if err != nil {
+		usage("Invalid Port", err)
+	}
+
+	c.Target = fmt.Sprintf("%s:%d", a.TargetIP, port)
+	c.Timeout, err = utils.ToUInt8(a.Timeout)
+	if err != nil {
+		usage("Invalid Timeout", err)
+	}
+
+	c.MaxRetries, err = utils.ToUInt8(a.MaxRetries)
+	if err != nil {
+		usage("Invalid Max Retries", err)
 	}
 }
 
 func NewClient(args *CArgs, cfg *utils.Config) (*Client, error) {
 	ct := Client{}
 
-	addrStr := fmt.Sprintf("%s:%d", args.TargetIP, args.TargetPort)
-
-	addr, err := net.ResolveUDPAddr("udp", addrStr)
+	addr, err := net.ResolveUDPAddr("udp", args.Target)
 	if err != nil {
 		return nil, err
 	}
@@ -90,16 +120,18 @@ func NewClient(args *CArgs, cfg *utils.Config) (*Client, error) {
 		return nil, err
 	}
 
-	ct.LogDir = cfg.LogDir
-	ct.LogPath = fmt.Sprintf("%sclient%s", cfg.LogDir, cfg.LogName)
-	err = utils.PrepareLogFile(ct.LogPath)
+	ct.Timeout, err = utils.ToUInt8(args.Timeout)
 	if err != nil {
-		ct.Target.Close()
 		return nil, err
 	}
 
-	ct.Timeout = time.Duration(args.Timeout) * time.Second
-	ct.MaxRetries = args.MaxRetries
+	packet.SetTimeout(ct.Target, uint8(args.Timeout))
+
+	ct.MaxRetries, err = utils.ToUInt8(args.MaxRetries)
+	if err != nil {
+		return nil, err
+	}
+
 	ct.Help = tui.NewHelpModel()
 	ct.Input = tui.NewTextInputModel()
 	ct.MsgSentDisplay = tui.NewProgressModel()
@@ -113,8 +145,11 @@ func (c *Client) Cleanup() {
 	c.Target.Close()
 }
 
-func usage(msg string) {
+func usage(msg string, err error) {
 	if msg != "" {
+		if err != nil {
+			msg = utils.WrapErr(msg, err).Error()
+		}
 		log.Println(msg)
 	}
 

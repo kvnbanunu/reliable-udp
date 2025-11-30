@@ -1,7 +1,5 @@
 package packet
 
-import "fmt"
-
 // Packet Type
 type PType uint8
 

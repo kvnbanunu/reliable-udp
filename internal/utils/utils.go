@@ -22,14 +22,6 @@ func CheckIP(str string) bool {
 	return true
 }
 
-// Checks if the port is within uint16 range
-func CheckPort(port uint) bool {
-	if port > uint(UINT16SZ) {
-		return false
-	}
-	return true
-}
-
 // Converts unsigned integer to uint8 if in range
 func ToUInt8(num uint) (uint8, error) {
 	if num <= uint(UINT8SZ) {

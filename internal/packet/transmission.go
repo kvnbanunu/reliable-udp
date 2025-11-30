@@ -7,7 +7,8 @@ import (
 	"reliable-udp/internal/utils"
 )
 
-func SetTimeout(conn *net.UDPConn, timeout time.Duration) error {
+func SetTimeout(conn *net.UDPConn, seconds uint8) error {
+	timeout := time.Duration(seconds) * time.Second
 	err := conn.SetReadDeadline(time.Now().Add(timeout))
 	if err != nil {
 		return err
@@ -41,7 +42,7 @@ func Recv(receiver *net.UDPConn) (Packet, *net.UDPAddr, error) {
 // Convert Packet to []byte and writes to target connection
 func Send(sender *net.UDPConn, receiver *net.UDPAddr, p Packet) error {
 	buf := Encode(p)
-	
+
 	bytes, err := sender.WriteToUDP(buf, receiver)
 	if err != nil {
 		return utils.WrapErr("Send", err)
