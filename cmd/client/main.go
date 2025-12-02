@@ -15,8 +15,8 @@ func main() {
 		log.Fatalln("Failed to load Config:", err)
 	}
 
-	args := client.ParseArgs()
-	args.HandleArgs()
+	rawArgs := client.ParseArgs(cfg)
+	args := rawArgs.HandleArgs()
 
 	ct, err := client.NewClient(args, cfg)
 	if err != nil {
@@ -25,8 +25,8 @@ func main() {
 
 	defer ct.Cleanup()
 
-	err = tui.Run(ct, "client")
+	err = tui.Run(ct)
 	if err != nil {
-		fmt.Printf("Error running client model: %v", err)
+		fmt.Println("Error running client model:", err)
 	}
 }

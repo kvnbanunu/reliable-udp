@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"reliable-udp/internal/utils"
+	"reliable-udp/internal/packet"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/progress"
@@ -26,7 +26,7 @@ func NewProgressModel() progress.Model {
 func NewTextInputModel() textinput.Model {
 	ti := textinput.New()
 	ti.Placeholder = "Hello World"
-	ti.CharLimit = int(utils.MAX_PAYLOAD_LEN)
+	ti.CharLimit = int(packet.MAX_PAYLOAD_LEN)
 	ti.Width = 20
 	ti.Focus()
 
@@ -34,7 +34,7 @@ func NewTextInputModel() textinput.Model {
 }
 
 // Generic Run command to start the render program
-func Run(m tea.Model, prog string) error {
+func Run(m tea.Model) error {
 	p := tea.NewProgram(m)
 	_, err := p.Run()
 	if err != nil {

@@ -1,28 +1,24 @@
 package tui
 
-import "reliable-udp/internal/utils"
+import (
+	"net"
+
+	"reliable-udp/internal/packet"
+)
 
 type ErrMsg struct {
 	Err error
 }
 
-type LogMsg struct {
-	MsgSent int `json:"messagesSent"`
-	MsgRecv int `json:"messagesReceived"`
-}
-
-type LogSuccessMsg struct{}
-
-type SendSuccessMsg struct {
-	SeqNum  uint8
-	Retries uint8
-	Timeout bool
-}
+type SendSuccessMsg struct{}
 
 type RecvSuccessMsg struct {
-	Packet utils.Packet
+	Packet packet.Packet
+	Client *net.UDPAddr
 }
 
 type TimeoutMsg struct{}
 
 type CancelMsg struct{}
+
+type UpdateMsg struct{}

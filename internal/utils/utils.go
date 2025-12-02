@@ -40,7 +40,7 @@ func ToUInt16(num uint) (uint16, error) {
 	return 0, ErrTooLarge
 }
 
-// Wraps error message
+// Wraps error message with msg (use function name)
 func WrapErr(msg string, err error) error {
 	return fmt.Errorf("%s: %w", msg, err)
 }

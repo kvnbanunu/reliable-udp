@@ -7,53 +7,85 @@ import (
 	"net"
 	"os"
 
+	"reliable-udp/internal/tui"
 	"reliable-udp/internal/utils"
 
-	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/progress"
 )
 
 type SArgs struct {
+	Addr string
+}
+
+type SRawArgs struct {
 	ListenIP   string
 	ListenPort uint
 }
 
-type Server struct {
-	Listener *net.UDPConn
-	Log      string
+type ClientData struct {
+	CID         uint8 // > 1
+	Addr       *net.UDPAddr
+	CurrentSeq uint8
 }
 
-func ParseArgs() *SArgs {
-	args := SArgs{}
+type Server struct {
+	Listener *net.UDPConn
+
+	// Communication data
+	Clients    []ClientData
+	NumClients int
+
+	// Logging data
+	MaxLogs    int
+	MaxDisplay int
+	MsgSent    int
+	MsgRecv    int
+	MsgLog     []string
+	Err        error
+
+	// Render models
+	Help           help.Model
+	MsgSentDisplay progress.Model
+	MsgRecvDisplay progress.Model
+}
+
+func ParseArgs(cfg *utils.Config) *SRawArgs {
+	args := SRawArgs{}
 	var help bool
 
 	flag.BoolVar(&help, "h", false, "Displays this help message")
-	flag.StringVar(&args.ListenIP, "listen-ip", "127.0.0.1", "IP address to bind to")
-	flag.UintVar(&args.ListenPort, "listen-port", 8080, "UDP port to listen on")
+	flag.StringVar(&args.ListenIP, "listen-ip", cfg.ServerIP, "IP address to bind to")
+	flag.UintVar(&args.ListenPort, "listen-port", uint(cfg.ServerPort), "UDP port to listen on")
 	flag.Parse()
 
 	if help {
-		usage("")
+		usage("", nil)
 	}
 
 	return &args
 }
 
-func (a *SArgs) HandleArgs() {
+func (a *SRawArgs) HandleArgs() *SArgs {
 	if !utils.CheckIP(a.ListenIP) {
-		usage("Invalid IP address")
+		usage("Invalid IP address", nil)
 	}
 
-	if !utils.CheckPort(a.ListenPort) {
-		usage("Invalid Port")
+	port, err := utils.ToUInt16(a.ListenPort)
+	if err != nil {
+		usage("Invalid Port", err)
 	}
+
+	res := SArgs{}
+
+	res.Addr = fmt.Sprintf("%s:%d", a.ListenIP, port)
+	return &res
 }
 
 func NewServer(args *SArgs, cfg *utils.Config) (*Server, error) {
 	srv := Server{}
 
-	addrStr := fmt.Sprintf("%s:%d", args.ListenIP, args.ListenPort)
-
-	addr, err := net.ResolveUDPAddr("udp", addrStr)
+	addr, err := net.ResolveUDPAddr("udp", args.Addr)
 	if err != nil {
 		return nil, err
 	}
@@ -63,20 +95,25 @@ func NewServer(args *SArgs, cfg *utils.Config) (*Server, error) {
 		return nil, err
 	}
 
-	srv.Log = fmt.Sprintf("%sserver%s", cfg.LogDir, cfg.LogName)
+	srv.Clients = append(srv.Clients, ClientData{}) // offset by 1
+	srv.MaxLogs = int(cfg.MaxLogs)
+	srv.Help = tui.NewHelpModel()
+	srv.MsgSentDisplay = tui.NewProgressModel()
+	srv.MsgRecvDisplay = tui.NewProgressModel()
+	srv.Err = nil
 
 	return &srv, nil
 }
 
 func (s *Server) Cleanup() {
-	err := s.Listener.Close()
-	if err != nil {
-		log.Fatalln("Failed to close socket:", err)
-	}
+	s.Listener.Close()
 }
 
-func usage(msg string) {
+func usage(msg string, err error) {
 	if msg != "" {
+		if err != nil {
+			msg = utils.WrapErr(msg, err).Error()
+		}
 		log.Println(msg)
 	}
 
@@ -88,17 +125,4 @@ Options:
 
 	fmt.Println(str)
 	os.Exit(0)
-}
-
-func (s Server) Init() tea.Cmd {
-	return nil
-}
-
-func (s Server) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return s, nil
-}
-
-func (s Server) View() string {
-	var view string
-	return view
 }

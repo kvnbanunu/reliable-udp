@@ -1,13 +1,10 @@
 package tui
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"net"
-	"time"
 
-	"reliable-udp/internal/utils"
+	"reliable-udp/internal/packet"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -18,66 +15,43 @@ func ErrCmd(err error) tea.Cmd {
 	}
 }
 
-func LogMessageCmd(logDir, prog, logPath string, logMsg LogMsg) tea.Cmd {
+func SendCmd(conn *net.UDPConn, receiver *net.UDPAddr, p packet.Packet) tea.Cmd {
 	return func() tea.Msg {
-		msg, err := json.Marshal(logMsg)
+		err := packet.Send(conn, receiver, p)
 		if err != nil {
-			return ErrMsg{Err: err}
+			return ErrCmd(err)
 		}
-
-		utils.AtomicWrite(logDir, prog, logPath, msg)
-		return LogSuccessMsg{}
+		return SendSuccessMsg{}
 	}
 }
 
-func SendMessageCmd(conn *net.UDPConn, packet utils.Packet) tea.Cmd {
+func RecvCmd(conn *net.UDPConn, timeout uint8) tea.Cmd {
 	return func() tea.Msg {
-		buf := utils.Encode(packet)
-
-		bytes, err := conn.Write(buf)
+		p, client, err := packet.Recv(conn, timeout)
 		if err != nil {
-			return ErrMsg{Err: err}
-		}
-		if bytes == 0 {
-			return ErrMsg{Err: fmt.Errorf("Error sending message")}
-		}
-		return SendSuccessMsg{
-			SeqNum:  packet.SeqNum,
-			Retries: packet.Retries,
-			Timeout: packet.Retries != 0,
-		}
-	}
-}
-
-func RecvMessageCmd(conn *net.UDPConn) tea.Cmd {
-	return func() tea.Msg {
-		buf := make([]byte, utils.MAX_PACKET_LEN)
-
-		bytes, _, err := conn.ReadFromUDP(buf)
-		if err != nil {
-			return ErrMsg{Err: err}
-		}
-
-		if bytes == 0 {
-			return ErrMsg{Err: fmt.Errorf("Error reading message")}
-		}
-
-		p := utils.Decode(buf)
-		return RecvSuccessMsg{Packet: p}
-	}
-}
-
-func RecvMessageTimeoutCmd(conn *net.UDPConn, timeout time.Duration) tea.Cmd {
-	return func() tea.Msg {
-		buf, err := utils.ReadTimeout(conn, timeout)
-		if err != nil {
-			if errors.Is(err, utils.ErrTimeout) {
+			if errors.Is(err, packet.ErrTimeout) {
 				return TimeoutMsg{}
 			}
 			return ErrMsg{Err: err}
 		}
+		return RecvSuccessMsg{Packet: p, Client: client}
+	}
+}
 
-		p := utils.Decode(buf)
-		return RecvSuccessMsg{Packet: p}
+func TimeoutCmd() tea.Cmd {
+	return func() tea.Msg {
+		return TimeoutMsg{}
+	}
+}
+
+func CancelCmd() tea.Cmd {
+	return func() tea.Msg {
+		return CancelMsg{}
+	}
+}
+
+func UpdateCmd() tea.Cmd {
+	return func() tea.Msg {
+		return UpdateMsg{}
 	}
 }

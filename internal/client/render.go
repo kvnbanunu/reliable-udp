@@ -1,9 +1,15 @@
 package client
 
+/*
+This file includes all logic related to the tui for the client
+*/
+
 import (
+	"errors"
 	"fmt"
 	"strings"
 
+	"reliable-udp/internal/packet"
 	"reliable-udp/internal/tui"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -36,28 +42,36 @@ func (c Client) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, tui.Keys.Quit):
 			return c, tea.Quit
 		case key.Matches(msg, tui.Keys.Enter):
-			return c.handleEnter()
+			c.Input.Blur()
+			c.handleInput(c.Input.Value())
+			return c, tui.SendCmd(c.Target, nil, c.CurrentPacket)
 		}
 	case tui.ErrMsg:
 		c.Err = msg.Err
 		return c, nil
 
-	case tui.SendSuccessMsg:
-		c.MsgSent++
-		c.addLog(constructLog(msg))
-		return c, tea.Batch(c.logCmd(), tui.RecvMessageTimeoutCmd(c.Target, c.Timeout))
-	case tui.LogSuccessMsg:
+	case tui.UpdateMsg:
 		return c.updateProgress()
-	case tui.RecvSuccessMsg:
-		c.addLog("ACK received!")
-		c, cmd = c.handleRecvMsg(msg)
-		return c, tea.Batch(c.logCmd(), cmd)
+	case tui.SendSuccessMsg:
+		c.onSent()
+		return c, tea.Batch(tui.UpdateCmd(), tui.RecvCmd(c.Target, c.Timeout))
 	case tui.TimeoutMsg:
-		c.addLog("Timed out waiting for ACK. Resending...")
-		return c.handleTimeout()
+		c.onTimeout()
+		if c.Err != nil && errors.Is(c.Err, packet.ErrCancel) {
+			c.Err = nil
+			return c, tui.CancelCmd()
+		}
+		return c, tui.SendCmd(c.Target, nil, c.CurrentPacket)
+	case tui.RecvSuccessMsg:
+		c.onRecv(msg.Packet)
+		if c.Err != nil {
+			c.Err = nil
+			return c, tea.Batch(tui.UpdateCmd(), tui.RecvCmd(c.Target, c.Timeout))
+		}
+		c.inputFocus()
+		return c, tui.UpdateCmd()
 	case tui.CancelMsg:
-		c.addLog("Max number of retries attempted. Request cancelled")
-		c.resetState()
+		c.inputFocus()
 		return c, nil
 
 	case progress.FrameMsg:
@@ -105,10 +119,23 @@ func (c Client) View() string {
 		"Messages Received:",
 		recView,
 		"",
-		strings.Join(c.LogMsg, "\n"),
+		strings.Join(c.MsgLog, "\n"),
 		"",
 		c.Help.View(tui.Keys),
 	)
 
 	return view
+}
+
+func (c Client) updateProgress() (Client, tea.Cmd) {
+	c.MaxDisplay = max(c.MsgSent, c.MsgRecv)
+	var cmds []tea.Cmd
+	cmds = append(cmds, c.MsgSentDisplay.SetPercent(float64(c.MsgSent)/float64(c.MaxDisplay)))
+	cmds = append(cmds, c.MsgRecvDisplay.SetPercent(float64(c.MsgRecv)/float64(c.MaxDisplay)))
+	return c, tea.Batch(cmds...)
+}
+
+func (c *Client) inputFocus() {
+	c.Input.Reset()
+	c.Input.Focus()
 }

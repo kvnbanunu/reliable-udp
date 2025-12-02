@@ -3,7 +3,7 @@
   "ServerPort": 8080,
   "Timeout": 2,
   "MaxRetries": 2,
-  "UseProxy": true,
+  "UseProxy": false,
   "ProxyIP": "127.0.0.1",
   "ProxyPort": 8081,
   "ClientDropRate": 0,
@@ -14,5 +14,5 @@
   "ClientDelayTimeMax": 0,
   "ServerDelayTimeMin": 0,
   "ServerDelayTimeMax": 0,
-  "MaxLogs": 5
+  "MaxLogs": 10
 }

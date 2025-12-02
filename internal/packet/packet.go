@@ -15,7 +15,7 @@ type Packet struct {
 	PYL []byte // Payload max 255 bytes
 }
 
-func NewPacket(seq, typ, tmo uint8, msg string) (Packet, error) {
+func NewPacket(cid, seq, typ, tmo uint8, msg string) (Packet, error) {
 	p := Packet{}
 	length := len(msg)
 
@@ -23,7 +23,7 @@ func NewPacket(seq, typ, tmo uint8, msg string) (Packet, error) {
 		return p, ErrLongMsg
 	}
 
-	p.CID = 0
+	p.CID = cid
 	p.SEQ = seq
 	p.TYP = typ
 	p.LEN = uint8(length)
@@ -47,7 +47,7 @@ func Encode(p Packet) []byte {
 	data[IRET] = p.RET
 	data[ITMO] = p.TMO
 
-	if p.TYP == SND && p.LEN > 0 {
+	if p.LEN > 0 {
 		data = append(data, p.PYL...)
 	}
 
@@ -64,7 +64,7 @@ func Decode(data []byte) Packet {
 	p.RET = data[IRET]
 	p.TMO = data[ITMO]
 
-	if p.TYP == SND && p.LEN > 0 {
+	if p.LEN > 0 {
 		p.PYL = data[IPYL:]
 	}
 

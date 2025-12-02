@@ -27,8 +27,12 @@ const (
 )
 
 var (
-	ErrTimeout = errors.New("Error: Time out")
-	ErrNoRead  = errors.New("Error: No bytes read")
-	ErrNoWrite = errors.New("Error: No bytes written")
-	ErrLongMsg = errors.New("Error: Input message is too long")
+	ErrBadReq  = errors.New("Bad Request")
+	ErrTimeout = errors.New("Time out")
+	ErrNoRead  = errors.New("No bytes read")
+	ErrNoWrite = errors.New("No bytes written")
+	ErrLongMsg = errors.New("Input message is too long")
+	ErrInvTYP  = errors.New("Invalid Packet Type")
+	ErrDupPCK  = errors.New("Duplicate or old packet")
+	ErrCancel  = errors.New("Message canceled")
 )

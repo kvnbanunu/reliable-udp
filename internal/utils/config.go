@@ -22,12 +22,14 @@ type Config struct {
 	ClientDelayTimeMax uint   `json:"ClientDelayTimeMax"`
 	ServerDelayTimeMin uint   `json:"ServerDelayTimeMin"`
 	ServerDelayTimeMax uint   `json:"ServerDelayTimeMax"`
+	MaxLogs            uint   `json:"MaxLogs"`
 }
 
+// Load contents of config.json or default
 func LoadConfig() (*Config, error) {
 	file, err := os.ReadFile("config.json")
 	if err != nil {
-		return nil, err
+		return DefaultConfig(), err
 	}
 
 	var cfg Config
@@ -37,4 +39,26 @@ func LoadConfig() (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// returns default config in case config.json does not exist
+func DefaultConfig() *Config {
+	return &Config{
+		ServerIP:           "127.0.0.1",
+		ServerPort:         8080,
+		Timeout:            2,
+		MaxRetries:         2,
+		UseProxy:           true,
+		ProxyIP:            "127.0.0.1",
+		ProxyPort:          8081,
+		ClientDropRate:     0,
+		ServerDropRate:     0,
+		ClientDelayRate:    0,
+		ServerDelayRate:    0,
+		ClientDelayTimeMin: 0,
+		ClientDelayTimeMax: 0,
+		ServerDelayTimeMin: 0,
+		ServerDelayTimeMax: 0,
+		MaxLogs:            10,
+	}
 }

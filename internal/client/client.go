@@ -39,6 +39,7 @@ type Client struct {
 	MaxRetries uint8        // Limit of packet resend attempts
 
 	// Communication data
+	CID           uint8         // client ID
 	CurrentSeq    uint8         // Sequence number of the current message
 	CurrentMsg    string        // Current input message
 	CurrentPacket packet.Packet // Current packet to send
@@ -48,8 +49,7 @@ type Client struct {
 	MaxDisplay int      // Higher number of sent vs recv
 	MsgSent    int      // Count of messages sent
 	MsgRecv    int      // Count of messages received
-	LogMsg     []string // The log message that will render to screen
-	NumLogs    int
+	MsgLog     []string // The log message that will render to screen
 	Err        error
 
 	// Render models
@@ -59,8 +59,8 @@ type Client struct {
 	MsgRecvDisplay progress.Model  // Messages received bar graph
 }
 
-func ParseArgs(cfg *utils.Config) *CArgs {
-	args := CArgs{}
+func ParseArgs(cfg *utils.Config) *CRawArgs {
+	args := CRawArgs{}
 	var help bool
 
 	targetIPDefault := cfg.ServerIP
@@ -85,7 +85,8 @@ func ParseArgs(cfg *utils.Config) *CArgs {
 	return &args
 }
 
-func (a *CRawArgs) HandleArgs(c *CArgs) {
+// Converts the row argument values into proper args
+func (a *CRawArgs) HandleArgs() *CArgs {
 	if !utils.CheckIP(a.TargetIP) {
 		usage("Invalid IP address", nil)
 	}
@@ -95,18 +96,23 @@ func (a *CRawArgs) HandleArgs(c *CArgs) {
 		usage("Invalid Port", err)
 	}
 
-	c.Target = fmt.Sprintf("%s:%d", a.TargetIP, port)
-	c.Timeout, err = utils.ToUInt8(a.Timeout)
+	res := CArgs{}
+
+	res.Target = fmt.Sprintf("%s:%d", a.TargetIP, port)
+	res.Timeout, err = utils.ToUInt8(a.Timeout)
 	if err != nil {
 		usage("Invalid Timeout", err)
 	}
 
-	c.MaxRetries, err = utils.ToUInt8(a.MaxRetries)
+	res.MaxRetries, err = utils.ToUInt8(a.MaxRetries)
 	if err != nil {
 		usage("Invalid Max Retries", err)
 	}
+
+	return &res
 }
 
+// Returns Client struct with initialized fields
 func NewClient(args *CArgs, cfg *utils.Config) (*Client, error) {
 	ct := Client{}
 
@@ -120,18 +126,9 @@ func NewClient(args *CArgs, cfg *utils.Config) (*Client, error) {
 		return nil, err
 	}
 
-	ct.Timeout, err = utils.ToUInt8(args.Timeout)
-	if err != nil {
-		return nil, err
-	}
-
-	packet.SetTimeout(ct.Target, uint8(args.Timeout))
-
-	ct.MaxRetries, err = utils.ToUInt8(args.MaxRetries)
-	if err != nil {
-		return nil, err
-	}
-
+	ct.Timeout = args.Timeout
+	ct.MaxRetries = args.MaxRetries
+	ct.MaxLogs = int(cfg.MaxLogs)
 	ct.Help = tui.NewHelpModel()
 	ct.Input = tui.NewTextInputModel()
 	ct.MsgSentDisplay = tui.NewProgressModel()
@@ -145,6 +142,7 @@ func (c *Client) Cleanup() {
 	c.Target.Close()
 }
 
+// Print usage message and exit program
 func usage(msg string, err error) {
 	if msg != "" {
 		if err != nil {

@@ -18,11 +18,19 @@ func SetTimeout(conn *net.UDPConn, seconds uint8) error {
 }
 
 // Read and convert buffer to Packet
-func Recv(receiver *net.UDPConn) (Packet, *net.UDPAddr, error) {
+func Recv(conn *net.UDPConn, timeout uint8) (Packet, *net.UDPAddr, error) {
 	buf := make([]byte, MAX_PACKET_LEN)
 	var p Packet
 
-	bytes, sender, err := receiver.ReadFromUDP(buf)
+	if timeout != 0 {
+		to := time.Duration(timeout) * time.Second
+		err := conn.SetReadDeadline(time.Now().Add(to))
+		if err != nil {
+			return p, nil, err
+		}
+	}
+
+	bytes, sender, err := conn.ReadFromUDP(buf)
 	if err != nil {
 		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 			return p, nil, utils.WrapErr("Recv", ErrTimeout)
@@ -40,10 +48,17 @@ func Recv(receiver *net.UDPConn) (Packet, *net.UDPAddr, error) {
 }
 
 // Convert Packet to []byte and writes to target connection
-func Send(sender *net.UDPConn, receiver *net.UDPAddr, p Packet) error {
+func Send(conn *net.UDPConn, receiver *net.UDPAddr, p Packet) error {
 	buf := Encode(p)
+	var bytes int
+	var err error
 
-	bytes, err := sender.WriteToUDP(buf, receiver)
+	if receiver != nil {
+		bytes, err = conn.WriteToUDP(buf, receiver)
+	} else {
+		bytes, err = conn.Write(buf)
+	}
+
 	if err != nil {
 		return utils.WrapErr("Send", err)
 	}
