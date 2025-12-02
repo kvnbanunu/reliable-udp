@@ -43,17 +43,16 @@ func (s Server) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case initMsg:
 		return s, tui.RecvCmd(s.Listener, 0)
 	case tui.RecvSuccessMsg:
-		cid := s.onRecv(msg.Packet, msg.Client)
-		if cid == 0 {
+		success := s.onRecv(msg.Packet, msg.Client)
+		if !success {
 			return s, tea.Batch(tui.UpdateCmd(), tui.RecvCmd(s.Listener, 0))
 		}
-		client := s.Clients[cid]
-		p, err := packet.NewPacket(cid, client.CurrentSeq, packet.ACK, 0, "")
+		p, err := packet.NewPacket(s.CurrentSeq, packet.ACK, 0, "")
 		if err != nil {
 			s.Err = err
 			return s, nil
 		}
-		return s, tea.Batch(tui.UpdateCmd(), tui.SendCmd(s.Listener, client.Addr, p))
+		return s, tea.Batch(tui.UpdateCmd(), tui.SendCmd(s.Listener, s.ClientAddr, p))
 
 	case tui.SendSuccessMsg:
 		s.onSend()

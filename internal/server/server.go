@@ -23,18 +23,12 @@ type SRawArgs struct {
 	ListenPort uint
 }
 
-type ClientData struct {
-	CID         uint8 // > 1
-	Addr       *net.UDPAddr
-	CurrentSeq uint8
-}
-
 type Server struct {
-	Listener *net.UDPConn
-
 	// Communication data
-	Clients    []ClientData
-	NumClients int
+	Listener    *net.UDPConn
+	ClientAddr  *net.UDPAddr
+	CurrentSeq  uint8
+	HasReceived bool
 
 	// Logging data
 	MaxLogs    int
@@ -95,7 +89,8 @@ func NewServer(args *SArgs, cfg *utils.Config) (*Server, error) {
 		return nil, err
 	}
 
-	srv.Clients = append(srv.Clients, ClientData{}) // offset by 1
+	srv.ClientAddr = nil
+	srv.HasReceived = false
 	srv.MaxLogs = int(cfg.MaxLogs)
 	srv.Help = tui.NewHelpModel()
 	srv.MsgSentDisplay = tui.NewProgressModel()

@@ -7,16 +7,6 @@ import (
 	"reliable-udp/internal/utils"
 )
 
-func SetTimeout(conn *net.UDPConn, seconds uint8) error {
-	timeout := time.Duration(seconds) * time.Second
-	err := conn.SetReadDeadline(time.Now().Add(timeout))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // Read and convert buffer to Packet
 func Recv(conn *net.UDPConn, timeout uint8) (Packet, *net.UDPAddr, error) {
 	buf := make([]byte, MAX_PACKET_LEN)

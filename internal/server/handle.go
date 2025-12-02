@@ -7,37 +7,35 @@ import (
 	"reliable-udp/internal/packet"
 )
 
-func (s *Server) onRecv(p packet.Packet, client *net.UDPAddr) uint8 {
+func (s *Server) onRecv(p packet.Packet, client *net.UDPAddr) bool {
 	s.MsgRecv++
-	s.addLog(fmt.Sprintf("Packet Received CID: %d SEQ: %d", p.CID, p.SEQ))
+	s.addLog(fmt.Sprintf("Packet Received SEQ: %d", p.SEQ))
 
-	if (p.CID != 0 && p.SEQ == 0 && p.TYP == packet.SYN) || (p.TYP == packet.ACK) {
+	switch {
+	case p.TYP == packet.ACK:
+		s.addLog("Bad request, client packet cannot be ACK")
+		return false
+	case p.SEQ < s.CurrentSeq:
+		s.addLog(fmt.Sprintf("Duplicate or old message: Seq %d", p.SEQ))
+		return false
+	case p.SEQ == s.CurrentSeq:
+		s.addLog(fmt.Sprintf("New Message Seq %d: %s", p.SEQ, p.PYL))
+	case p.SEQ > s.CurrentSeq:
+		s.addLog(fmt.Sprintf("Skipping Seq %d, New Message Seq %d: %s", s.CurrentSeq, p.SEQ, p.PYL))
+		s.CurrentSeq = p.SEQ
+	default:
 		s.addLog(packet.ErrBadReq.Error())
-		return 0
+		return false
 	}
 
-	// New client
-	cid := p.CID
-	if p.CID == 0 && p.SEQ == 0 && p.TYP == packet.SYN {
-		s.NumClients++
-		cid = uint8(s.NumClients)
-		s.Clients = append(s.Clients, ClientData{
-			CID:        cid,
-			Addr:       client,
-			CurrentSeq: 0,
-		})
-		s.addLog(fmt.Sprintf("New client added CID: %d", cid))
-	} else {
-		s.Clients[p.CID].CurrentSeq = p.SEQ
-	}
-
-	s.addLog(fmt.Sprintf("Message: %s", string(p.PYL)))
-	return cid
+	s.ClientAddr = client
+	return true
 }
 
 func (s *Server) onSend() {
-	s.addLog("ACK sent")
+	s.addLog(fmt.Sprintf("ACK sent for SEQ %d", s.CurrentSeq))
 	s.MsgSent++
+	s.CurrentSeq++
 }
 
 func (s *Server) addLog(str string) {

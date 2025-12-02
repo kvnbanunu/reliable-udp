@@ -39,7 +39,6 @@ type Client struct {
 	MaxRetries uint8        // Limit of packet resend attempts
 
 	// Communication data
-	CID           uint8         // client ID
 	CurrentSeq    uint8         // Sequence number of the current message
 	CurrentMsg    string        // Current input message
 	CurrentPacket packet.Packet // Current packet to send

@@ -5,11 +5,9 @@ This file includes all logic related to the tui for the client
 */
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
-	"reliable-udp/internal/packet"
 	"reliable-udp/internal/tui"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -56,16 +54,14 @@ func (c Client) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.onSent()
 		return c, tea.Batch(tui.UpdateCmd(), tui.RecvCmd(c.Target, c.Timeout))
 	case tui.TimeoutMsg:
-		c.onTimeout()
-		if c.Err != nil && errors.Is(c.Err, packet.ErrCancel) {
-			c.Err = nil
+		success := c.onTimeout()
+		if !success {
 			return c, tui.CancelCmd()
 		}
 		return c, tui.SendCmd(c.Target, nil, c.CurrentPacket)
 	case tui.RecvSuccessMsg:
-		c.onRecv(msg.Packet)
-		if c.Err != nil {
-			c.Err = nil
+		success := c.onRecv(msg.Packet)
+		if !success {
 			return c, tea.Batch(tui.UpdateCmd(), tui.RecvCmd(c.Target, c.Timeout))
 		}
 		c.inputFocus()

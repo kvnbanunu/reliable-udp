@@ -17,7 +17,6 @@ func (p Proxy) Init() tea.Cmd {
 }
 
 func (p Proxy) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// var cmd tea.Cmd
 	var cmds []tea.Cmd
 	if p.Err != nil {
 		switch msg := msg.(type) {
@@ -41,10 +40,28 @@ func (p Proxy) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tui.UpdateMsg:
 		return p.updateProgress()
 	case recvClientMsg:
-		p.onClientRecv(msg.Addr)
+		p.onClientRecv(msg.Packet, msg.Addr)
+		if checkRate(p.ClientDropRate) {
+			p.onClientDrop(msg.Packet)
+			return p, tui.UpdateCmd()
+		}
+		if checkRate(p.ClientDelayRate) {
+			t := determineDelay(p.ClientDelayMin, p.ClientDelayMax)
+			p.onClientDelay(msg.Packet, t)
+			return p, tea.Batch(tui.UpdateCmd(), delayedSendCmd(p.Target, nil, msg.Packet, t))
+		}
 		return p, tea.Batch(tui.UpdateCmd(), tui.SendCmd(p.Target, nil, msg.Packet))
 	case recvServerMsg:
-		p.onServerRecv()
+		p.onServerRecv(msg.Packet)
+		if checkRate(p.ServerDropRate) {
+			p.onServerDrop(msg.Packet)
+			return p, tui.UpdateCmd()
+		}
+		if checkRate(p.ServerDelayRate) {
+			t := determineDelay(p.ServerDelayMin, p.ServerDelayMax)
+			p.onServerDelay(msg.Packet, t)
+			return p, tea.Batch(tui.UpdateCmd(), delayedSendCmd(p.Listener, p.ClientAddr, msg.Packet, t))
+		}
 		return p, tea.Batch(tui.UpdateCmd(), tui.SendCmd(p.Listener, p.ClientAddr, msg.Packet))
 	case tui.SendSuccessMsg:
 		p.onSend()

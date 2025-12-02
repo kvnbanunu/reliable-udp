@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"reliable-udp/internal/packet"
-	"reliable-udp/internal/utils"
 )
 
 func (c *Client) handleInput(msg string) error {
@@ -13,11 +12,7 @@ func (c *Client) handleInput(msg string) error {
 
 	c.CurrentMsg = msg
 
-	if c.CurrentSeq == 0 {
-		ptype = packet.SYN
-	}
-
-	c.CurrentPacket, err = packet.NewPacket(c.CID, c.CurrentSeq, ptype, c.Timeout, msg)
+	c.CurrentPacket, err = packet.NewPacket(c.CurrentSeq, ptype, c.Timeout, msg)
 	if err != nil {
 		return err
 	}
@@ -30,42 +25,35 @@ func (c *Client) onSent() {
 	c.MsgSent++
 }
 
-func (c *Client) onTimeout() {
+func (c *Client) onTimeout() bool {
 	if c.CurrentPacket.RET == c.MaxRetries {
 		c.resetState()
 		c.addLog("Max retries reached. Please enter a new message")
-		c.Err = packet.ErrCancel
-		return
+		return false
 	}
 	c.CurrentPacket.RET++
-	c.addLog("Read timed out, resending...")
+	c.addLog(fmt.Sprintf("Read timed out, resending. Seq %d Retry %d", c.CurrentSeq, c.CurrentPacket.RET))
+	return true
 }
 
-func (c *Client) onRecv(p packet.Packet) {
+func (c *Client) onRecv(p packet.Packet) bool {
 	c.MsgRecv++
 	c.addLog(fmt.Sprintf("Packet Received: SEQ %d", p.SEQ))
 	// the server or proxy should only ever send ACKs
 	if p.TYP != packet.ACK {
-		c.Err = utils.WrapErr("handleRecv", packet.ErrInvTYP)
-		c.addLog(packet.ErrInvTYP.Error())
-		return
+		c.addLog("Invalid packet type, Server should only send ACK")
+		return false
 	}
 
 	if p.SEQ != c.CurrentSeq {
-		c.Err = utils.WrapErr("handleRecv", packet.ErrDupPCK)
-		c.addLog(packet.ErrDupPCK.Error())
-		return
+		c.addLog(fmt.Sprintf("Duplicate or old packet received: SEQ %d", p.SEQ))
+		return false
 	}
 
-	// connection established
-	if p.SEQ == 0 {
-		c.CID = p.CID
-		c.addLog(fmt.Sprintf("Connection established, ID set to %d", c.CID))
-	}
-
-	c.addLog(fmt.Sprintf("Successful transmission of Packet: SEQ %d", c.CurrentSeq))
+	c.addLog(fmt.Sprintf("ACK received for Packet: SEQ %d", c.CurrentSeq))
 	c.addLog("Please enter a new message")
 	c.resetState()
+	return true
 }
 
 func (c *Client) resetState() {
