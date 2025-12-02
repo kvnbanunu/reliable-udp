@@ -5,7 +5,6 @@ import "errors"
 const (
 	SND uint8 = iota // 0
 	ACK              // 1
-	FIN              // 2
 )
 
 const (
@@ -30,7 +29,4 @@ var (
 	ErrNoRead  = errors.New("No bytes read")
 	ErrNoWrite = errors.New("No bytes written")
 	ErrLongMsg = errors.New("Input message is too long")
-	ErrInvTYP  = errors.New("Invalid Packet Type")
-	ErrDupPCK  = errors.New("Duplicate or old packet")
-	ErrCancel  = errors.New("Message canceled")
 )

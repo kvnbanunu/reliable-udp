@@ -28,7 +28,6 @@ type Server struct {
 	Listener    *net.UDPConn
 	ClientAddr  *net.UDPAddr
 	CurrentSeq  uint8
-	HasReceived bool
 
 	// Logging data
 	MaxLogs    int
@@ -90,7 +89,6 @@ func NewServer(args *SArgs, cfg *utils.Config) (*Server, error) {
 	}
 
 	srv.ClientAddr = nil
-	srv.HasReceived = false
 	srv.MaxLogs = int(cfg.MaxLogs)
 	srv.Help = tui.NewHelpModel()
 	srv.MsgSentDisplay = tui.NewProgressModel()
