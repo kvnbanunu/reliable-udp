@@ -1,28 +1,35 @@
+SERVER_IP = 192.168.0.53
+SERVER_PORT = 9091
+PROXY_IP = 192.168.0.73
+PROXY_PORT = 9090
+TIMEOUT = 3
+MAX_RETRIES = 4
+
 rserver:
 	./server \
-		--listen-ip 192.168.0.53 \
-		--listen-port 9091
+		--listen-ip $(SERVER_IP) \
+		--listen-port $(SERVER_PORT)
 
 rclient:
 	./client \
-		--target-ip 192.168.0.53 \
-		--target-port 9091 \
-		--timeout 3 \
-		--max-retries 4
+		--target-ip $(SERVER_IP) \
+		--target-port $(SERVER_PORT) \
+		--timeout $(TIMEOUT) \
+		--max-retries $(MAX_RETRIES)
 
 rclient2:
 	./client \
-		--target-ip 192.168.0.73 \
-		--target-port 9090 \
-		--timeout 3 \
-		--max-retries 4
+		--target-ip $(PROXY_IP) \
+		--target-port $(PROXY_PORT) \
+		--timeout $(TIMEOUT) \
+		--max-retries $(MAX_RETRIES)
 
 rproxy:
 	./proxy \
-		--listen-ip 192.168.0.73 \
-		--listen-port 9090 \
-		--target-ip 192.168.0.53 \
-		--target-port 9091 \
+		--listen-ip $(PROXY_IP) \
+		--listen-port $(PROXY_PORT) \
+		--target-ip $(SERVER_IP) \
+		--target-port $(SERVER_PORT) \
 		--client-drop 0 \
 		--server-drop 0 \
 		--client-delay 0 \
