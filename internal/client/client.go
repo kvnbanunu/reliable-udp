@@ -44,12 +44,11 @@ type Client struct {
 	CurrentPacket packet.Packet // Current packet to send
 
 	// Logging data
-	MaxLogs    int      // Max number of logs to show on screen
-	MaxDisplay int      // Higher number of sent vs recv
-	MsgSent    int      // Count of messages sent
-	MsgRecv    int      // Count of messages received
-	MsgLog     []string // The log message that will render to screen
-	Err        error
+	MaxLogs int      // Max number of logs to show on screen
+	MsgSent int      // Count of messages sent
+	MsgRecv int      // Count of messages received
+	MsgLog  []string // The log message that will render to screen
+	Err     error
 
 	// Render models
 	Help           help.Model      // Displays controls

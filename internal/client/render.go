@@ -124,10 +124,10 @@ func (c Client) View() string {
 }
 
 func (c Client) updateProgress() (Client, tea.Cmd) {
-	c.MaxDisplay = max(c.MsgSent, c.MsgRecv)
+	maxDisplay := max(c.MsgSent, c.MsgRecv)
 	var cmds []tea.Cmd
-	cmds = append(cmds, c.MsgSentDisplay.SetPercent(float64(c.MsgSent)/float64(c.MaxDisplay)))
-	cmds = append(cmds, c.MsgRecvDisplay.SetPercent(float64(c.MsgRecv)/float64(c.MaxDisplay)))
+	cmds = append(cmds, c.MsgSentDisplay.SetPercent(float64(c.MsgSent)/float64(maxDisplay)))
+	cmds = append(cmds, c.MsgRecvDisplay.SetPercent(float64(c.MsgRecv)/float64(maxDisplay)))
 	return c, tea.Batch(cmds...)
 }
 

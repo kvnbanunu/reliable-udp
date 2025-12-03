@@ -55,7 +55,7 @@ func (s Server) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return s, tea.Batch(tui.UpdateCmd(), tui.SendCmd(s.Listener, s.ClientAddr, p))
 
 	case tui.SendSuccessMsg:
-		s.onSend()
+		s.onSent()
 		return s, tea.Batch(tui.UpdateCmd(), tui.RecvCmd(s.Listener, 0))
 
 	case progress.FrameMsg:
@@ -108,10 +108,10 @@ func (s Server) View() string {
 }
 
 func (s Server) updateProgress() (Server, tea.Cmd) {
-	s.MaxDisplay = max(s.MsgSent, s.MsgRecv)
+	maxDisplay := max(s.MsgSent, s.MsgRecv)
 	var cmds []tea.Cmd
-	cmds = append(cmds, s.MsgSentDisplay.SetPercent(float64(s.MsgSent)/float64(s.MaxDisplay)))
-	cmds = append(cmds, s.MsgRecvDisplay.SetPercent(float64(s.MsgRecv)/float64(s.MaxDisplay)))
+	cmds = append(cmds, s.MsgSentDisplay.SetPercent(float64(s.MsgSent)/float64(maxDisplay)))
+	cmds = append(cmds, s.MsgRecvDisplay.SetPercent(float64(s.MsgRecv)/float64(maxDisplay)))
 	return s, tea.Batch(cmds...)
 }
 

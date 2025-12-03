@@ -1,10 +1,5 @@
 package packet
 
-// Packet Type
-type PType uint8
-
-// Header for this new protocol
-// Total size is 5 bytes
 type Packet struct {
 	SEQ uint8  // Sequence Number
 	TYP uint8  // Packet Type

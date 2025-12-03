@@ -39,7 +39,7 @@ func (p *Proxy) onServerDelay(packet packet.Packet, t time.Duration) {
 	p.addLog(fmt.Sprintf("Server Packet SEQ %d delayed for %v", packet.SEQ, t))
 }
 
-func (p *Proxy) onSend() {
+func (p *Proxy) onSent() {
 	p.addLog("Packet forwarded")
 	p.MsgSent++
 }

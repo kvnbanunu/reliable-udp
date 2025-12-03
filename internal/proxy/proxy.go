@@ -44,8 +44,12 @@ type PRawArgs struct {
 }
 
 type Proxy struct {
-	Listener        *net.UDPConn
-	Target          *net.UDPConn
+	// connection settings
+	Listener   *net.UDPConn
+	Target     *net.UDPConn
+	ClientAddr *net.UDPAddr
+
+	// Configurable settings
 	ClientDropRate  uint8
 	ServerDropRate  uint8
 	ClientDelayRate uint8
@@ -55,15 +59,14 @@ type Proxy struct {
 	ServerDelayMin  uint
 	ServerDelayMax  uint
 
-	ClientAddr *net.UDPAddr
+	// Logging data
+	MaxLogs int
+	MsgSent int
+	MsgRecv int
+	MsgLog  []string
+	Err     error
 
-	MaxLogs    int
-	MaxDisplay int
-	MsgSent    int
-	MsgRecv    int
-	MsgLog     []string
-	Err        error
-
+	// Render models
 	Help           help.Model
 	MsgSentDisplay progress.Model
 	MsgRecvDisplay progress.Model

@@ -25,17 +25,16 @@ type SRawArgs struct {
 
 type Server struct {
 	// Communication data
-	Listener    *net.UDPConn
-	ClientAddr  *net.UDPAddr
-	CurrentSeq  uint8
+	Listener   *net.UDPConn
+	ClientAddr *net.UDPAddr
+	CurrentSeq uint8
 
 	// Logging data
-	MaxLogs    int
-	MaxDisplay int
-	MsgSent    int
-	MsgRecv    int
-	MsgLog     []string
-	Err        error
+	MaxLogs int
+	MsgSent int
+	MsgRecv int
+	MsgLog  []string
+	Err     error
 
 	// Render models
 	Help           help.Model

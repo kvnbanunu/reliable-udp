@@ -51,5 +51,3 @@ clear:
 
 clean:
 	rm -rf bin
-	rm *.debug
-	rm -rf logs

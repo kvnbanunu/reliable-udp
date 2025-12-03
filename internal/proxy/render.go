@@ -64,7 +64,7 @@ func (p Proxy) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return p, tea.Batch(tui.UpdateCmd(), tui.SendCmd(p.Listener, p.ClientAddr, msg.Packet))
 	case tui.SendSuccessMsg:
-		p.onSend()
+		p.onSent()
 		return p, tui.UpdateCmd()
 	case progress.FrameMsg:
 		progressModel, cmd := p.MsgSentDisplay.Update(msg)
@@ -116,9 +116,9 @@ func (p Proxy) View() string {
 }
 
 func (p Proxy) updateProgress() (Proxy, tea.Cmd) {
-	p.MaxDisplay = max(p.MsgSent, p.MsgRecv)
+	maxDisplay := max(p.MsgSent, p.MsgRecv)
 	var cmds []tea.Cmd
-	cmds = append(cmds, p.MsgSentDisplay.SetPercent(float64(p.MsgSent)/float64(p.MaxDisplay)))
-	cmds = append(cmds, p.MsgRecvDisplay.SetPercent(float64(p.MsgRecv)/float64(p.MaxDisplay)))
+	cmds = append(cmds, p.MsgSentDisplay.SetPercent(float64(p.MsgSent)/float64(maxDisplay)))
+	cmds = append(cmds, p.MsgRecvDisplay.SetPercent(float64(p.MsgRecv)/float64(maxDisplay)))
 	return p, tea.Batch(cmds...)
 }

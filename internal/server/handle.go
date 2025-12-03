@@ -32,7 +32,7 @@ func (s *Server) onRecv(p packet.Packet, client *net.UDPAddr) bool {
 	return true
 }
 
-func (s *Server) onSend() {
+func (s *Server) onSent() {
 	s.addLog(fmt.Sprintf("ACK sent for SEQ %d", s.CurrentSeq))
 	s.MsgSent++
 	s.CurrentSeq++
