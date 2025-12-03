@@ -1,8 +1,8 @@
 {
   "ServerIP": "192.168.0.53",
   "ServerPort": 9091,
-  "Timeout": 5,
-  "MaxRetries": 5,
+  "Timeout": 3,
+  "MaxRetries": 4,
   "UseProxy": true,
   "ProxyIP": "192.168.0.73",
   "ProxyPort": 9090,
