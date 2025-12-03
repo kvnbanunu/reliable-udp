@@ -45,7 +45,7 @@ func (p *Proxy) onSent() {
 }
 
 func checkRate(rate uint8) bool {
-	check := rand.UintN(101)
+	check := rand.UintN(100)
 	return check <= uint(rate)
 }
 
