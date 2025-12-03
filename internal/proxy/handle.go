@@ -50,7 +50,7 @@ func checkRate(rate uint8) bool {
 }
 
 func determineDelay(dmin, dmax uint) time.Duration {
-	delay := rand.UintN(dmax+1) + dmin
+	delay := max(rand.UintN(dmax+1), dmin)
 	return time.Millisecond * time.Duration(delay)
 }
 

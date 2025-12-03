@@ -2,8 +2,11 @@ package proxy
 
 import (
 	"fmt"
+	"net"
 	"strings"
+	"time"
 
+	"reliable-udp/internal/packet"
 	"reliable-udp/internal/tui"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -48,7 +51,8 @@ func (p Proxy) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if checkRate(p.ClientDelayRate) {
 			t := determineDelay(p.ClientDelayMin, p.ClientDelayMax)
 			p.onClientDelay(msg.Packet, t)
-			return p, tea.Batch(tui.UpdateCmd(), delayedSendCmd(p.Target, nil, msg.Packet, t))
+			// return p, tea.Batch(tui.UpdateCmd(), delayedSendCmd(p.Target, nil, msg.Packet, t))
+			return p, tea.Batch(tui.UpdateCmd(), delayMiddle(p.Target, nil, msg.Packet, t))
 		}
 		return p, tea.Batch(tui.UpdateCmd(), tui.SendCmd(p.Target, nil, msg.Packet))
 	case recvServerMsg:
@@ -60,9 +64,12 @@ func (p Proxy) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if checkRate(p.ServerDelayRate) {
 			t := determineDelay(p.ServerDelayMin, p.ServerDelayMax)
 			p.onServerDelay(msg.Packet, t)
-			return p, tea.Batch(tui.UpdateCmd(), delayedSendCmd(p.Listener, p.ClientAddr, msg.Packet, t))
+			// return p, tea.Batch(tui.UpdateCmd(), delayedSendCmd(p.Listener, p.ClientAddr, msg.Packet, t))
+			return p, tea.Batch(tui.UpdateCmd(), delayMiddle(p.Listener, p.ClientAddr, msg.Packet, t))
 		}
 		return p, tea.Batch(tui.UpdateCmd(), tui.SendCmd(p.Listener, p.ClientAddr, msg.Packet))
+	case delayMiddleMsg:
+		return p, tea.Batch(tui.UpdateCmd(), delayedSendCmd(msg.Conn, msg.Addr, msg.Packet, msg.Delay))
 	case tui.SendSuccessMsg:
 		p.onSent()
 		return p, tui.UpdateCmd()
@@ -121,4 +128,22 @@ func (p Proxy) updateProgress() (Proxy, tea.Cmd) {
 	cmds = append(cmds, p.MsgSentDisplay.SetPercent(float64(p.MsgSent)/float64(maxDisplay)))
 	cmds = append(cmds, p.MsgRecvDisplay.SetPercent(float64(p.MsgRecv)/float64(maxDisplay)))
 	return p, tea.Batch(cmds...)
+}
+
+type delayMiddleMsg struct {
+	Conn *net.UDPConn
+	Addr *net.UDPAddr
+	Packet packet.Packet
+	Delay time.Duration
+}
+
+func delayMiddle(conn *net.UDPConn, addr *net.UDPAddr, p packet.Packet, d time.Duration) tea.Cmd {
+	return func() tea.Msg {
+		return delayMiddleMsg{
+			Conn: conn,
+			Addr: addr,
+			Packet: p,
+			Delay: d,
+		}
+	}
 }
