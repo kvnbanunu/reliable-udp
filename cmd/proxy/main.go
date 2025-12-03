@@ -26,7 +26,7 @@ func main() {
 
 	defer px.Cleanup()
 
-	m := tea.NewProgram(px)
+	m := tea.NewProgram(px, tea.WithAltScreen())
 	px.Program = m
 
 	_, err = m.Run()

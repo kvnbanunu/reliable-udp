@@ -35,7 +35,7 @@ func NewTextInputModel() textinput.Model {
 
 // Generic Run command to start the render program
 func Run(m tea.Model) error {
-	p := tea.NewProgram(m)
+	p := tea.NewProgram(m, tea.WithAltScreen())
 	_, err := p.Run()
 	if err != nil {
 		return err

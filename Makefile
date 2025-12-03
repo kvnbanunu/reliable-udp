@@ -20,7 +20,7 @@ PROXY_PARAMS = --client-drop 10 --server-drop 5 --client-delay 20 --server-delay
 PROXY_ARGS = --listen-ip $(PROXY_IP) --listen-port $(PROXY_PORT) --target-ip $(SERVER_IP) --target-port $(SERVER_PORT) $(PROXY_PARAMS)
 COPY_CONFIG = cp config.json bin/
 
-all: clean buildserver buildclient buildproxy
+all: clean buildserver buildclient buildproxy copymakefile
 
 server: clear
 	@$(RUN) $(SERVER) $(SERVER_ARGS)
@@ -51,3 +51,6 @@ clear:
 
 clean:
 	rm -rf bin
+
+copymakefile:
+	@cp scripts/Makefile bin/
